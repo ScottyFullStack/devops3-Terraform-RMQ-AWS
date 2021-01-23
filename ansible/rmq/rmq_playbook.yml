@@ -1,0 +1,33 @@
+---
+    - name: Configure Jenkins Job
+      hosts: tag_group_rmq
+
+      tasks:
+
+        - name: Install RMQ
+          become: yes
+          shell: |
+            apt-get update -y
+            apt-get install curl gnupg -y
+            curl -fsSL https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc | apt-key add -
+            apt-get install apt-transport-https
+            tee /etc/apt/sources.list.d/bintray.rabbitmq.list <<EOF
+            deb https://dl.bintray.com/rabbitmq-erlang/debian bionic erlang
+            deb https://dl.bintray.com/rabbitmq/debian bionic main
+            EOF
+            apt-get update -y
+            apt-get install rabbitmq-server -y --fix-missing
+        
+        - name: Start RMQ
+          become: yes
+          shell: service rabbitmq-server start
+
+        - name: Enable RMQ Admin Dash
+          become: yes
+          shell: rabbitmq-plugins enable rabbitmq_management
+
+        - name: Add initial user
+          become: yes
+          shell: |
+            rabbitmqctl add_user sparlor Welcome1
+            rabbitmqctl set_user_tags sparlor administrator
